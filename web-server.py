@@ -1,17 +1,53 @@
 from argparse import ArgumentParser
+from nis import match
 from threading import Thread
 from socket import *
+from HTTPReq import *
+from HTTPResp import *
 import sys
 import os
 
 class ClientThread(Thread):
-    def __init__(self, clientAddr, clientConn):
+    def __init__(self, clientAddr, clientConn, serverDir):
         Thread.__init__(self)
         self.cConn = clientConn
+        self.sDir = serverDir
         print("New connection added: ", clientAddr)
-
+        
     def run(self):
-        pass
+        # read a sequence of bytes from socket sent by the client
+        req_byte_stream = self.cConn.recv(1024)
+        
+        # parsing the bytes on a HTTP request
+        client_request = HTTPReq()
+        client_request.parse(req_byte_stream)
+
+        # creating a HTTP response
+        if client_request.is_BadRequest():
+            response = HTTPRespBadRequest()
+        else:
+            method = client_request.get_method()
+            if method == "POST" or method == "PUT" or method == "HEAD":
+                raise NotImplementedError("This code just implements GET requests")
+            elif method != "GET":
+                print("Invalid method")
+                sys.exit(1)
+            else:
+                fileURL = os.path.join(self.sDir, client_request.get_URL())
+                if not os.path.exists(fileURL):
+                    response = HTTPRespNotFound()
+                else:
+                    response = HTTPRespOK()
+                    #TODO: Write response body to file
+
+        # send back HTTP respose over the TCP connection
+        self.cConn.send(response.encode())
+
+        # close the TCP connection
+        self.cConn.close()    
+                
+
+
 
 def server():
     server_parser = ArgumentParser(description='List the address of the web server \
@@ -52,6 +88,8 @@ def server():
     if not os.path.isdir(args.Dir):
         print("Directory %s does not exist" % args.Dir)
         sys.exit(1)
+    else:
+        serverDir = args.Dir
     
     # server begins listening for incoming TCP requests
     serverSocket.listen(1)
@@ -61,7 +99,7 @@ def server():
     while True:
         # server waits for incoming requests; new socket created on return
         connectionSocket, addr = serverSocket.accept()
-        new_thread = ClientThread(addr, connectionSocket)
+        new_thread = ClientThread(addr, connectionSocket, serverDir)
         new_thread.start()
 
     try: 

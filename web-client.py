@@ -1,7 +1,10 @@
 from argparse import ArgumentParser
 from socket import *
+from HTTPReq import *
+from HTTPResp import *
 import re
 import sys
+
 
 def urlparse(URL):
     url_parsed = {}
@@ -11,14 +14,14 @@ def urlparse(URL):
         sys.exit(1)
     else:
         netloc = m_url.group(2)
-        m_netloc = re.search("([a-zA-Z0-9]+)(?::([1-9][0-9]*))?", netloc)
+        m_netloc = re.search("([a-zA-Z0-9\.-]+)(?::([1-9][0-9]*))?", netloc)
         if m_netloc is None:
             print("Invalid address: %s" % netloc)
             sys.exit(1)
         else:
             url_parsed['scheme'] = m_url.group(1)
             url_parsed['hostname'] = m_netloc.group(1)
-            if m_netloc.group(2) != '':
+            if m_netloc.group(2) != None:
                 url_parsed['port'] = int(m_netloc.group(2))
             else:
                 url_parsed['port'] = 8080 #default HTTP port
@@ -71,7 +74,30 @@ def client():
             print("Connection error: %s" % e) 
             sys.exit(1)
 
-        # construct and send HTTP request
+        # construct HTTP request
+        request = HTTPReq()
+        request.set_method('GET')
+        request.set_URL(url_parsed['path'])
+        
+        # send the request over the TCP connection
+        # No need to specify server name, port
+        clientSocket.send(request.encode())
+
+        # read a sequence of bytes from socket sent by the server
+        resp_byte_stream = clientSocket.recv(1024)
+
+        # parsing the bytes on a HTTP request
+        server_response = HTTPResp()
+        server_response.parse(resp_byte_stream)
+
+        status_code = server_response.get_status_code()
+        status_phrase = server_response.get_status_phrase()
+        if status_code != 200:
+            print("%s: Error %d: %s" % (URL, status_code, status_phrase))
+        else:
+            #TODO: Write response body to file
+            pass
+
 
         # close the TCP connection
         try: 
