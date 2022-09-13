@@ -1,5 +1,4 @@
 import re
-from tokenize import group
 
 class HTTPReq():
     def __init__(self):

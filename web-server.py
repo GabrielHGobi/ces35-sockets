@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from nis import match
 from threading import Thread
 from socket import *
 from HTTPReq import *
