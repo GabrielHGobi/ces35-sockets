@@ -33,7 +33,7 @@ class HTTPReq():
     def encode(self):
         message = '' + self._method + ' ' + self._URL + ' ' + 'HTTP/1.1' + '\r\n'
         for header_field_name, value in self._headers.items():
-            message += header_field_name + ' ' + value + '\r\n'
+            message += header_field_name + ': ' + value + '\r\n'
         message += '\r\n'
         message += self._body
         return message.encode(encoding='UTF-8')

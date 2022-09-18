@@ -78,7 +78,7 @@ def client():
         request = HTTPReq()
         request.set_method('GET')
         request.set_URL(url_parsed['path'])
-        
+
         # send the request over the TCP connection
         # No need to specify server name, port
         clientSocket.send(request.encode())
@@ -89,15 +89,14 @@ def client():
         # parsing the bytes on a HTTP request
         server_response = HTTPResp()
         server_response.parse(resp_byte_stream)
-
         status_code = server_response.get_status_code()
         status_phrase = server_response.get_status_phrase()
         if status_code != 200:
             print("%s: Error %d: %s" % (URL, status_code, status_phrase))
         else:
-            #TODO: Write response body to file
-            pass
-
+            rcved_file = open(url_parsed['path'], 'w')
+            rcved_file.write(server_response._body)
+            rcved_file.close()
 
         # close the TCP connection
         try: 

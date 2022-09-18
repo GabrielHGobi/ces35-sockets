@@ -5,6 +5,7 @@ from HTTPReq import *
 from HTTPResp import *
 import sys
 import os
+import signal
 
 class ClientThread(Thread):
     def __init__(self, clientAddr, clientConn, serverDir):
@@ -12,6 +13,7 @@ class ClientThread(Thread):
         self.cConn = clientConn
         self.sDir = serverDir
         print("New connection added: ", clientAddr)
+
         
     def run(self):
         # read a sequence of bytes from socket sent by the client
@@ -20,14 +22,13 @@ class ClientThread(Thread):
         # parsing the bytes on a HTTP request
         client_request = HTTPReq()
         client_request.parse(req_byte_stream)
-
         # creating a HTTP response
         if client_request.is_BadRequest():
             response = HTTPRespBadRequest()
         else:
             method = client_request.get_method()
             if method == "POST" or method == "PUT" or method == "HEAD":
-                raise NotImplementedError("This code just implements GET requests")
+                raise NotImplementedError("This code just implements GET requests.")
             elif method != "GET":
                 print("Invalid method")
                 sys.exit(1)
@@ -37,7 +38,9 @@ class ClientThread(Thread):
                     response = HTTPRespNotFound()
                 else:
                     response = HTTPRespOK()
-                    #TODO: Write response body to file
+                    body_part = open(fileURL, 'r')
+                    body_part = str(body_part.read())
+                    response._body = body_part
 
         # send back HTTP respose over the TCP connection
         self.cConn.send(response.encode())
@@ -95,17 +98,25 @@ def server():
 
     print("Server started")
     print("Waiting for client request...")
+
+    # double-check interrupt 
+    def int_handler(signum, frame):
+        ans = input("\nSIGINT detected. Do you really want to exit? (y/n): ")
+        if ans == 'y':
+            try:
+                serverSocket.close()
+                sys.exit(0)
+            except error as e: 
+                print ("Error closing socket: %s" % e) 
+                sys.exit(1)
+
+    signal.signal(signal.SIGINT, int_handler)
+
     while True:
         # server waits for incoming requests; new socket created on return
         connectionSocket, addr = serverSocket.accept()
         new_thread = ClientThread(addr, connectionSocket, serverDir)
         new_thread.start()
-
-    try: 
-        serverSocket.close()
-    except error as e: 
-        print ("Error closing socket: %s" % e) 
-        sys.exit(1)
 
 if __name__ == '__main__':
     server()
