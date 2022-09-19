@@ -33,7 +33,8 @@ class ClientThread(Thread):
                 print("Invalid method")
                 sys.exit(1)
             else:
-                fileURL = os.path.join(self.sDir, client_request.get_URL())
+                fileURL = './' + self.sDir +client_request.get_URL()
+                print(fileURL)
                 if not os.path.exists(fileURL):
                     response = HTTPRespNotFound()
                 else:
