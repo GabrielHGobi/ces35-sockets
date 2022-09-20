@@ -35,20 +35,18 @@ class HTTPResp:
     
     def parse(self, byte_stream: str):
         message = byte_stream.decode(encoding='UTF-8')
-        m_response = re.search('HTTP/1\.1 ([0-9]*) ([a-zA-z ]+)\r\n'\
-                    '(?:(\S*) (\S*)\r\n)*\r\n(.*)', message, re.S)
+        m_response = re.findall('HTTP/1\.1 ([0-9]*) ([a-zA-z ]+)\r\n', message, re.S)
+        m_headers = re.findall('(\S*): ([\S ]*)\r\n', message, re.S)
+        # m_body = re.findall('([^:]*)\r\n', message, re.S)
         if m_response is None:
-            print("Invalid protocol")
+            print("Invalid protocol.")
         else:
-            self._status_code = int(m_response.group(1))
-            self._status_phrase = m_response.group(2)    
+            self._status_code = int(m_response[0][0])
+            self._status_phrase = m_response[0][1]  
             self._headers = {}
-            i = 3
-            n = len(m_response.groups())
-            while i < n and not m_response.group(i) is None:
-                self._headers[m_response.group(i)] = m_response.group(i+1)
-                i += 2
-            self._body = m_response.group(n)
+            for i in range(len(m_headers)):
+                self._headers[m_headers[i][0]] = m_headers[i][1]
+            self._body = " "
 
 
 class HTTPRespNotFound(HTTPResp):

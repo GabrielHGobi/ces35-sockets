@@ -106,7 +106,7 @@ def server():
         if ans == 'y':
             try:
                 serverSocket.close()
-                sys.exit(0)
+                sys.exit(1)
             except error as e: 
                 print ("Error closing socket: %s" % e) 
                 sys.exit(1)

@@ -31,16 +31,15 @@ class HTTPReq():
         return self._BadRequest
 
     def encode(self):
-        message = '' + self._method + ' ' + self._URL + ' ' + 'HTTP/1.1' + '\n'
+        message = '' + self._method + ' ' + self._URL + ' ' + 'HTTP/1.1' + '\r\n'
         for header_field_name, value in self._headers.items():
-            message += header_field_name + ': ' + value + '\n'
-        message += '\n'
+            message += header_field_name + ': ' + value + '\r\n'
+        message += '\r\n'
         message += self._body
         return message.encode(encoding='UTF-8')
 
     def parse(self, byte_stream: str):
         message = byte_stream.decode(encoding='UTF-8')
-        print(f"M: {message}")
         m_request = re.findall('(GET|POST|PUT|HEAD) (\S*) HTTP/1\.1\r\n', message, re.S)
         m_headers = re.findall('(\S*): ([\S ]*)\r\n', message, re.S)
         if m_request is None:

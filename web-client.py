@@ -48,7 +48,6 @@ def client():
 
         # server port number
         serverPort = url_parsed['port']
-
         # create TCP socket on client to use for connecting to remote
         # server.  Indicate the server's remote listening port
         try: 
@@ -77,7 +76,14 @@ def client():
         # construct HTTP request
         request = HTTPReq()
         request.set_method('GET')
-        request.set_URL(url_parsed['path'])
+        request.set_URL('/'+ url_parsed['path'])
+
+        # headers
+        request.add_header_field('Host', serverHostname)
+        request.add_header_field('Connection', 'keep-alive')
+        request.add_header_field('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
+        request.add_header_field('Accept-Encoding', 'gzip, deflate')
+        request.add_header_field('Accept-Language', 'pt-BR,pt;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6')
 
         # send the request over the TCP connection
         # No need to specify server name, port
