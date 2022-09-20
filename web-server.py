@@ -6,6 +6,7 @@ from HTTPResp import *
 import sys
 import os
 import signal
+import datetime
 
 class ClientThread(Thread):
     def __init__(self, clientAddr, clientConn, serverDir):
@@ -30,18 +31,23 @@ class ClientThread(Thread):
             if method == "POST" or method == "PUT" or method == "HEAD":
                 raise NotImplementedError("This code just implements GET requests.")
             elif method != "GET":
-                print("Invalid method")
+                print("Invalid method.")
                 sys.exit(1)
             else:
                 fileURL = './' + self.sDir +client_request.get_URL()
-                print(fileURL)
                 if not os.path.exists(fileURL):
                     response = HTTPRespNotFound()
                 else:
                     response = HTTPRespOK()
+                    # headers
+                    currDate = datetime.datetime.now(datetime.timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
+                    response.add_header_field('Date', f'{currDate}')
+                    response.add_header_field('Content-Language', 'en-US')
+                    response.add_header_field('Connection', 'Keep-Alive')
                     body_part = open(fileURL, 'r')
-                    body_part = str(body_part.read())
+                    body_part = body_part.read()
                     response._body = body_part
+                    
 
         # send back HTTP respose over the TCP connection
         self.cConn.send(response.encode())
@@ -49,8 +55,6 @@ class ClientThread(Thread):
         # close the TCP connection
         self.cConn.close()    
                 
-
-
 
 def server():
     server_parser = ArgumentParser(description='List the address of the web server \

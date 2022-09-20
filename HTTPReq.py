@@ -42,16 +42,18 @@ class HTTPReq():
         message = byte_stream.decode(encoding='UTF-8')
         m_request = re.findall('(GET|POST|PUT|HEAD) (\S*) HTTP/1\.1\r\n', message, re.S)
         m_headers = re.findall('(\S*): ([\S ]*)\r\n', message, re.S)
+        m_body = re.findall('\r\n\r\n([\S \r\n]*)', message, re.S)
         if m_request is None:
             self._BadRequest = True
         else:
-            self._method = m_request[0][0]
-            if m_request[0][1] == '/':
-                self._URL = '/index.html'
-            else:
-                self._URL = m_request[0][1]    
+            for i in range(len(m_request)):
+                self._method = m_request[i][0]
+                if m_request[i][1] == '/':
+                    self._URL = '/index.html'
+                else:
+                    self._URL = m_request[i][1]    
             self._headers = {}
             for i in range(len(m_headers)):
                 self._headers[m_headers[i][0]] = m_headers[i][1]
-            self._body = " "
+            self._body = m_body[0]
             self._BadRequest = False

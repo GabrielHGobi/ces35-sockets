@@ -28,7 +28,7 @@ class HTTPResp:
     def encode(self):
         message = 'HTTP/1.1' + ' ' + str(self._status_code) + ' ' + self._status_phrase + '\r\n'
         for header_field_name, value in self._headers.items():
-            message += header_field_name + ' ' + value + '\r\n'
+            message += header_field_name + ': ' + value + '\r\n'
         message += '\r\n'
         message += self._body
         return message.encode(encoding='UTF-8')
@@ -37,16 +37,18 @@ class HTTPResp:
         message = byte_stream.decode(encoding='UTF-8')
         m_response = re.findall('HTTP/1\.1 ([0-9]*) ([a-zA-z ]+)\r\n', message, re.S)
         m_headers = re.findall('(\S*): ([\S ]*)\r\n', message, re.S)
-        # m_body = re.findall('([^:]*)\r\n', message, re.S)
+        m_body = re.findall('\r\n\r\n([\S \r\n]*)', message, re.S)
         if m_response is None:
             print("Invalid protocol.")
         else:
-            self._status_code = int(m_response[0][0])
-            self._status_phrase = m_response[0][1]  
+            for i in range(len(m_response)):
+                self._status_code = int(m_response[i][0])
+                self._status_phrase = m_response[i][1]  
             self._headers = {}
             for i in range(len(m_headers)):
                 self._headers[m_headers[i][0]] = m_headers[i][1]
-            self._body = " "
+            print(m_body)
+            self._body = m_body[0]
 
 
 class HTTPRespNotFound(HTTPResp):
