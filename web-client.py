@@ -81,7 +81,7 @@ def client():
         # headers
         request.add_header_field('Host', serverHostname)
         request.add_header_field('Connection', 'keep-alive')
-        request.add_header_field('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
+        request.add_header_field('Accept', 'text/html')
         request.add_header_field('Accept-Encoding', 'gzip, deflate')
         request.add_header_field('Accept-Language', 'pt-BR,pt;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6')
 
@@ -100,6 +100,7 @@ def client():
         if status_code != 200:
             print("%s: Error %d: %s" % (URL, status_code, status_phrase))
         else:
+            
             rcved_file = open(url_parsed['path'], 'w')
             rcved_file.write(server_response._body)
             rcved_file.close()

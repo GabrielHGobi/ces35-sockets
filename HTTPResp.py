@@ -47,7 +47,6 @@ class HTTPResp:
             self._headers = {}
             for i in range(len(m_headers)):
                 self._headers[m_headers[i][0]] = m_headers[i][1]
-            print(m_body)
             self._body = m_body[0]
 
 
