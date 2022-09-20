@@ -28,27 +28,26 @@ class HTTPResp:
     def encode(self):
         message = 'HTTP/1.1' + ' ' + str(self._status_code) + ' ' + self._status_phrase + '\r\n'
         for header_field_name, value in self._headers.items():
-            message += header_field_name + ' ' + value + '\r\n'
+            message += header_field_name + ': ' + value + '\r\n'
         message += '\r\n'
         message += self._body
         return message.encode(encoding='UTF-8')
     
     def parse(self, byte_stream: str):
         message = byte_stream.decode(encoding='UTF-8')
-        m_response = re.search('HTTP/1\.1 ([0-9]*) ([a-zA-z ]+)\r\n'\
-                    '(?:(\S*) (\S*)\r\n)*\r\n(.*)', message, re.S)
+        m_response = re.findall('HTTP/1\.1 ([0-9]*) ([a-zA-z ]+)\r\n', message, re.S)
+        m_headers = re.findall('(\S*): ([\S ]*)\r\n', message, re.S)
+        m_body = re.findall('\r\n\r\n([\S \r\n]*)', message, re.S)
         if m_response is None:
-            print("Invalid protocol")
+            print("Invalid protocol.")
         else:
-            self._status_code = int(m_response.group(1))
-            self._status_phrase = m_response.group(2)    
+            for i in range(len(m_response)):
+                self._status_code = int(m_response[i][0])
+                self._status_phrase = m_response[i][1]  
             self._headers = {}
-            i = 3
-            n = len(m_response.groups())
-            while i < n and not m_response.group(i) is None:
-                self._headers[m_response.group(i)] = m_response.group(i+1)
-                i += 2
-            self._body = m_response.group(n)
+            for i in range(len(m_headers)):
+                self._headers[m_headers[i][0]] = m_headers[i][1]
+            self._body = m_body[0]
 
 
 class HTTPRespNotFound(HTTPResp):

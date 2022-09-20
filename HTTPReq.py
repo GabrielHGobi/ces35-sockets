@@ -33,25 +33,27 @@ class HTTPReq():
     def encode(self):
         message = '' + self._method + ' ' + self._URL + ' ' + 'HTTP/1.1' + '\r\n'
         for header_field_name, value in self._headers.items():
-            message += header_field_name + ' ' + value + '\r\n'
+            message += header_field_name + ': ' + value + '\r\n'
         message += '\r\n'
         message += self._body
         return message.encode(encoding='UTF-8')
 
     def parse(self, byte_stream: str):
         message = byte_stream.decode(encoding='UTF-8')
-        m_request = re.search('(GET|POST|PUT|HEAD) (\S*) HTTP/1\.1\r\n'\
-                    '(?:(\S*) (\S*)\r\n)*\r\n(.*)', message, re.S)
+        m_request = re.findall('(GET|POST|PUT|HEAD) (\S*) HTTP/1\.1\r\n', message, re.S)
+        m_headers = re.findall('(\S*): ([\S ]*)\r\n', message, re.S)
+        m_body = re.findall('\r\n\r\n([\S \r\n]*)', message, re.S)
         if m_request is None:
             self._BadRequest = True
         else:
-            self._method = m_request.group(1)
-            self._URL = m_request.group(2)    
+            for i in range(len(m_request)):
+                self._method = m_request[i][0]
+                if m_request[i][1] == '/':
+                    self._URL = '/index.html'
+                else:
+                    self._URL = m_request[i][1]    
             self._headers = {}
-            i = 3
-            n = len(m_request.groups())
-            while i < n and not m_request.group(i) is None:
-                self._headers[m_request.group(i)] = m_request.group(i+1)
-                i += 2
-            self._body = m_request.group(n)
+            for i in range(len(m_headers)):
+                self._headers[m_headers[i][0]] = m_headers[i][1]
+            self._body = m_body[0]
             self._BadRequest = False

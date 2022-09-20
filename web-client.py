@@ -48,7 +48,6 @@ def client():
 
         # server port number
         serverPort = url_parsed['port']
-
         # create TCP socket on client to use for connecting to remote
         # server.  Indicate the server's remote listening port
         try: 
@@ -77,8 +76,15 @@ def client():
         # construct HTTP request
         request = HTTPReq()
         request.set_method('GET')
-        request.set_URL(url_parsed['path'])
-        
+        request.set_URL('/'+ url_parsed['path'])
+
+        # headers
+        request.add_header_field('Host', serverHostname)
+        request.add_header_field('Connection', 'keep-alive')
+        request.add_header_field('Accept', 'text/html')
+        request.add_header_field('Accept-Encoding', 'gzip, deflate')
+        request.add_header_field('Accept-Language', 'pt-BR,pt;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6')
+
         # send the request over the TCP connection
         # No need to specify server name, port
         clientSocket.send(request.encode())
@@ -89,15 +95,15 @@ def client():
         # parsing the bytes on a HTTP request
         server_response = HTTPResp()
         server_response.parse(resp_byte_stream)
-
         status_code = server_response.get_status_code()
         status_phrase = server_response.get_status_phrase()
         if status_code != 200:
             print("%s: Error %d: %s" % (URL, status_code, status_phrase))
         else:
-            #TODO: Write response body to file
-            pass
-
+            
+            rcved_file = open(url_parsed['path'], 'w')
+            rcved_file.write(server_response._body)
+            rcved_file.close()
 
         # close the TCP connection
         try: 
