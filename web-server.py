@@ -7,6 +7,7 @@ import sys
 import os
 import signal
 import datetime
+import base64
 
 class ClientThread(Thread):
     def __init__(self, clientAddr, clientConn, serverDir):
@@ -18,7 +19,7 @@ class ClientThread(Thread):
         
     def run(self):
         # read a sequence of bytes from socket sent by the client
-        req_byte_stream = self.cConn.recv(1024)
+        req_byte_stream = self.cConn.recv(1048576)
         
         # parsing the bytes on a HTTP request
         client_request = HTTPReq()
@@ -34,7 +35,7 @@ class ClientThread(Thread):
                 print("Invalid method.")
                 sys.exit(1)
             else:
-                fileURL = './' + self.sDir +client_request.get_URL()
+                fileURL = './' + self.sDir + client_request.get_URL()
                 if not os.path.exists(fileURL):
                     response = HTTPRespNotFound()
                 else:
@@ -44,10 +45,19 @@ class ClientThread(Thread):
                     response.add_header_field('Date', f'{currDate}')
                     response.add_header_field('Content-Language', 'en-US')
                     response.add_header_field('Connection', 'Keep-Alive')
-                    body_part = open(fileURL, 'r')
-                    body_part = body_part.read()
-                    response._body = body_part
-                    
+                    # envio de png
+                    m_png = re.findall("(\.png)", fileURL)
+                    if m_png:
+                        response.add_header_field('Content-Type', 'image/png')
+                        response.add_header_field('Accept-Encoding', 'base64')
+                        body_part_bytes = open(fileURL, "rb")
+                        body_part = base64.b64encode(body_part_bytes.read()).decode()
+                        response._body = body_part
+                    else:    
+                        body_part = open(fileURL, 'r')
+                        body_part = body_part.read()
+                        response._body = body_part
+                    response.add_header_field('Content-Length', str({len(response.get_body().encode(encoding='UTF-8'))}))
 
         # send back HTTP respose over the TCP connection
         self.cConn.send(response.encode())
