@@ -25,6 +25,9 @@ class HTTPResp:
     def set_body(self, body: str):
         self._body = body
     
+    def get_body(self):
+        return self._body
+    
     def encode(self):
         message = 'HTTP/1.1' + ' ' + str(self._status_code) + ' ' + self._status_phrase + '\r\n'
         for header_field_name, value in self._headers.items():
