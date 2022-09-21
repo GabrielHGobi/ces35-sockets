@@ -4,11 +4,12 @@ from HTTPReq import *
 from HTTPResp import *
 import re
 import sys
+import base64
 
 
 def urlparse(URL):
     url_parsed = {}
-    m_url = re.search("(http|https)://(.*)/(.*)", URL)
+    m_url = re.search("(http|https)://([^/]*)(?:\/(.*))?", URL)
     if m_url is None:
         print("Invalid URL: %s" % URL)
         sys.exit(1)
@@ -24,14 +25,13 @@ def urlparse(URL):
             if m_netloc.group(2) != None:
                 url_parsed['port'] = int(m_netloc.group(2))
             else:
-                url_parsed['port'] = 8080 #default HTTP port
-            if m_url.group(3) != '':
+                url_parsed['port'] = 80 #default HTTP port
+            if m_url.group(3) != '' and not m_url.group(3) is None:
                 url_parsed['path'] = m_url.group(3)
             else:
                 url_parsed['path'] = 'index.html'
             
             return url_parsed
-
 
 
 def client():
@@ -81,16 +81,17 @@ def client():
         # headers
         request.add_header_field('Host', serverHostname)
         request.add_header_field('Connection', 'keep-alive')
-        request.add_header_field('Accept', 'text/html')
-        request.add_header_field('Accept-Encoding', 'gzip, deflate')
+        request.add_header_field('Accept', 'text/html,image/webp,image/apng, image/png')
+        request.add_header_field('Accept-Encoding', 'gzip, deflate, base64')
         request.add_header_field('Accept-Language', 'pt-BR,pt;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6')
 
         # send the request over the TCP connection
         # No need to specify server name, port
+
         clientSocket.send(request.encode())
 
         # read a sequence of bytes from socket sent by the server
-        resp_byte_stream = clientSocket.recv(1024)
+        resp_byte_stream = clientSocket.recv(1048576)
 
         # parsing the bytes on a HTTP request
         server_response = HTTPResp()
@@ -100,9 +101,17 @@ def client():
         if status_code != 200:
             print("%s: Error %d: %s" % (URL, status_code, status_phrase))
         else:
-            
-            rcved_file = open(url_parsed['path'], 'w')
-            rcved_file.write(server_response._body)
+            m_png = re.findall("(\.png)", url_parsed['path'])
+            if m_png:
+                len_png = len(server_response.get_body())
+                if len_png % 4 != 0:
+                    n_padding = 4 - len_png % 4
+                    server_response.set_body(server_response.get_body() + (n_padding*'='))
+                rcved_file = open(url_parsed['path'].replace("/", "_"), 'wb')
+                rcved_file.write(base64.b64decode(server_response.get_body()))
+            else:
+                rcved_file = open(url_parsed['path'].replace("/", "_"), 'w')
+                rcved_file.write(server_response.get_body())
             rcved_file.close()
 
         # close the TCP connection
